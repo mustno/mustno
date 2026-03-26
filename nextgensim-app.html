@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coming Soon— App</title>
+<link rel="icon" type="image/png" href="logo.png?v=1">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060c18; --text: #e4edff; --green: #5effa8; --accent: #4a7aff;
+  --border: rgba(60,100,240,.15); --dim: rgba(160,190,255,.42);
+  --hdr-bg: rgba(6,12,24,.95); --font-main: 'Syne', sans-serif;
+}
+body.theme-wii {
+  --bg: #f4f4f4; --text: #444444; --green: #00a2e8; --accent: #00baff;
+  --border: #d0d0d0; --dim: #777777; --hdr-bg: rgba(244,244,244,0.95);
+  --font-main: 'Arial', sans-serif;
+}
+.theme-wii .grid, .theme-wii .scan { display: none; }
+.theme-wii .cs-title span { -webkit-text-stroke: 0; color: var(--accent); }
+
+body.theme-retro {
+  --bg: #000000; --text: #00ff00; --green: #00ff00; --accent: #00ff00;
+  --border: #00ff00; --dim: #00aa00; --hdr-bg: #000000; --font-main: 'Space Mono', monospace;
+}
+.theme-retro .cs-title span { -webkit-text-stroke: 1.5px var(--accent); color: transparent; }
+
+body.theme-cyberpunk {
+  --bg: #090014; --text: #ffffff; --green: #00f0ff; --accent: #ff007c;
+  --border: rgba(255, 0, 124, 0.3); --dim: #ff99cc; --hdr-bg: rgba(9,0,20,0.95);
+  --font-main: 'Syne', sans-serif;
+}
+.theme-cyberpunk .cs-title span { -webkit-text-stroke: 1.5px var(--green); text-shadow: 0 0 15px rgba(0, 240, 255, 0.6); color: transparent; }
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-main);cursor:none; transition: background 0.5s ease, color 0.5s ease;}
+#cur{position:fixed;width:7px;height:7px;background:var(--green);border-radius:50%;pointer-events:none;z-index:9999;mix-blend-mode:screen;transition:transform .15s, background .2s;}
+body.theme-wii #cur { mix-blend-mode: normal; }
+
+.grid{position:fixed;inset:0;background-image:linear-gradient(color-mix(in srgb, var(--accent) 15%, transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb, var(--accent) 15%, transparent) 1px,transparent 1px);background-size:64px 64px;}
+.scan{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.02) 2px,rgba(0,0,0,.02) 4px);}
+
+.theme-select { background: transparent; border: 1px solid var(--border); color: var(--dim); font-family: 'Space Mono', monospace; font-size: 0.6rem; padding: 4px 8px; outline: none; cursor: none; border-radius: 4px; }
+.theme-select option { background: var(--bg); color: var(--text); }
+
+.topbar{position:fixed;top:0;left:0;right:0;height:48px;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--hdr-bg);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);}
+.tb-left{display:flex;align-items:center;gap:12px;}
+.tb-back{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.1em;color:var(--dim);text-decoration:none;cursor:none;border:1px solid var(--border);padding:4px 10px;transition:color .2s,border-color .2s;border-radius: 4px;}
+.tb-back:hover{color:var(--green);border-color:var(--green);}
+.tb-title{font-family:'Space Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:.18em;color:var(--text);}
+.tb-title em{color:var(--green);font-style:normal;animation:blink 1.8s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.tb-right{display:flex;align-items:center;gap:14px;}
+.tb-badge{display:flex;align-items:center;gap:5px;font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.1em;color:var(--green);}
+.bdot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pls 2s ease-in-out infinite;}
+@keyframes pls{0%,100%{opacity:1}50%{opacity:.35}}
+
+.center{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center;padding:20px;}
+.cs-icon{font-size:3.5rem;line-height:1;filter:saturate(.5) brightness(.8);margin-bottom:4px;animation:float 4s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.cs-label{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.28em;color:var(--green);text-transform:uppercase;}
+.cs-title{font-size:clamp(2rem,5vw,3.5rem);font-weight:900;letter-spacing:-.03em;color:var(--text);}
+.cs-title span{color:transparent;-webkit-text-stroke:1px color-mix(in srgb, var(--accent) 50%, transparent);}
+.cs-sub{font-size:.85rem;color:var(--dim);max-width:400px;line-height:1.7;}
+.cs-bar-wrap{width:240px;height:1px;background:var(--border);overflow:hidden;margin-top:8px;}
+.cs-bar{height:100%;background:var(--green);animation:barLoop 3s ease-in-out infinite;}
+@keyframes barLoop{0%{transform:scaleX(0) translateX(0);transform-origin:left;}50%{transform:scaleX(1);transform-origin:left;}51%{transform-origin:right;}100%{transform:scaleX(0);transform-origin:right;}}
+.cs-btn{display:flex;align-items:center;gap:8px;padding:12px 28px;margin-top:8px;background:transparent;border:1px solid var(--border);font-family:'Space Mono',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);cursor:none;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));transition:color .25s,border-color .25s,background .25s;}
+.cs-btn:hover{color:var(--text);border-color:var(--accent);background:color-mix(in srgb, var(--accent) 10%, transparent);}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div class="grid"></div>
+<div class="scan"></div>
+
+<div class="topbar">
+  <div class="tb-left">
+    <a href="nextgensim.html" class="tb-back">← NextGenSim</a>
+    <a href="index.html" class="tb-back">← Projekte</a>
+    <div class="tb-title">NEXT<em>_</em>GEN SIM</div>
+  </div>
+  <div class="tb-right">
+    <select class="theme-select" onchange="changeTheme(this.value)">
+      <option value="">Cyber (Default)</option>
+      <option value="theme-wii">Wii Style</option>
+      <option value="theme-retro">Retro</option>
+      <option value="theme-cyberpunk">Cyberpunk</option>
+    </select>
+    <div class="tb-badge"><div class="bdot"></div>In Entwicklung</div>
+  </div>
+</div>
+
+<div class="center">
+  <div class="cs-icon">⬡</div>
+  <div class="cs-label">// Simulator</div>
+  <div class="cs-title">Coming <span>Soon</span></div>
+  <div class="cs-sub">Diese Seite ist in aktiver Entwicklung. Diese Seite wird durch die echte Simulator-Oberfläche ersetzt.</div>
+  <div class="cs-bar-wrap"><div class="cs-bar"></div></div>
+  <button class="cs-btn" onclick="window.location.href='nextgensim.html'">← Zurück zur Info-Seite</button>
+</div>
+
+<script>
+const cur=document.getElementById('cur');
+document.addEventListener('mousemove',e=>{cur.style.left=e.clientX-3.5+'px';cur.style.top=e.clientY-3.5+'px';});
+document.querySelectorAll('.tb-back,.cs-btn,.theme-select').forEach(el=>{
+  el.addEventListener('mouseenter',()=>cur.style.transform='scale(2.5)');
+  el.addEventListener('mouseleave',()=>cur.style.transform='scale(1)');
+});
+window.addEventListener('touchstart',()=>{cur.style.display='none';},{once:true});
+</script>
+
+<!-- ── PREMIUM AUDIO SYSTEM ── -->
+<style>
+  #audio-widget {
+    position: fixed; bottom: clamp(20px, 4vh, 40px); left: clamp(20px, 4vw, 56px); z-index: 9990;
+    display: flex; gap: 14px; align-items: center;
+    background: var(--glass, rgba(255, 255, 255, 0.05)); border: 1px solid var(--border, rgba(255,255,255,0.1));
+    padding: 10px 18px 10px 14px; border-radius: calc(var(--proj-rad, 0px) / 2 + 12px); backdrop-filter: blur(12px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15); transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  }
+  #audio-widget:hover { border-color: var(--accent, #4a7aff); box-shadow: 0 8px 30px color-mix(in srgb, var(--accent, #4a7aff) 20%, transparent); transform: translateY(-2px); }
+  body.theme-wii #audio-widget { background: rgba(255, 255, 255, 0.85); border-color: #ccc; }
+  .audio-eq { display: flex; gap: 3px; align-items: flex-end; height: 16px; width: 18px; }
+  .eq-bar { width: 4px; background: var(--dim, #888); border-radius: 2px; height: 4px; transition: height 0.1s, background 0.3s; }
+  #audio-widget.is-playing .eq-bar { background: var(--green, #5effa8); animation: eq-bounce 0.8s infinite alternate ease-in-out; box-shadow: 0 0 6px var(--green, #5effa8); }
+  #audio-widget.is-playing .eq-bar:nth-child(2) { animation-delay: -0.4s; }
+  #audio-widget.is-playing .eq-bar:nth-child(3) { animation-delay: -0.2s; }
+  @keyframes eq-bounce { 0%, 20% { height: 4px; } 100% { height: 16px; } }
+  .audio-info { display: flex; flex-direction: column; justify-content: center; min-width: 70px; }
+  .audio-label { font-family: 'Space Mono', monospace; font-size: 0.45rem; color: var(--muted, #999); letter-spacing: 0.25em; text-transform: uppercase; margin-bottom: 3px; }
+  .audio-track { font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; color: var(--text, #fff); letter-spacing: 0.15em; text-transform: uppercase; transition: color 0.3s; }
+  #audio-widget.is-playing .audio-track { color: var(--accent, #4a7aff); }
+  .audio-controls { display: flex; gap: 6px; align-items: center; margin-left: 10px; padding-left: 14px; border-left: 1px solid var(--border, #444); }
+  .audio-btn { background: transparent; border: none; color: var(--dim, #888); display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; cursor: none; transition: all 0.2s; }
+  .audio-btn svg { width: 14px; height: 14px; fill: currentColor; }
+  .audio-btn:hover { color: var(--bg, #000); background: var(--text, #fff); transform: scale(1.1); }
+  #audio-widget.is-playing .audio-btn:hover { background: var(--green, #5effa8); }
+</style>
+
+<div id="audio-widget">
+  <div class="audio-eq"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>
+  <div class="audio-info"><div class="audio-label">SYS.BGM</div><div class="audio-track" id="bgm-track-name">TRACK 01</div></div>
+  <div class="audio-controls">
+    <button class="audio-btn" onclick="toggleBGM()"><svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg id="icon-pause" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
+    <button class="audio-btn" onclick="nextTrack()"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+  </div>
+</div>
+
+<script>
+const savedTheme = localStorage.getItem('mustno-theme');
+if (savedTheme) { document.body.className = savedTheme; if (document.querySelector('.theme-select')) document.querySelector('.theme-select').value = savedTheme; }
+
+function changeTheme(themeName) {
+  document.body.className = themeName; localStorage.setItem('mustno-theme', themeName);
+  trackIdx = 0; localStorage.setItem('mustno-track-idx', '0'); localStorage.setItem('mustno-bgm-time', '0'); playCurrentTrack();
+}
+
+const AUDIO_CFG = {
+  sfx: { hover: 'Downloads/sfx-hover.mp3', click: 'Downloads/sfx-click.mp3' },
+  bgm: {
+    'default':         ['Downloads/cyber-1.mp3', 'Downloads/cyber-2.mp3'],
+    'theme-wii':       ['Downloads/wii-1.mp3',   'Downloads/wii-2.mp3'],
+    'theme-retro':     ['Downloads/retro-1.mp3', 'Downloads/retro-2.mp3'],
+    'theme-cyberpunk': ['Downloads/cyberpunk-1.mp3', 'Downloads/cyberpunk-2.mp3']
+  }
+};
+
+const sfxHover = new Audio(AUDIO_CFG.sfx.hover); sfxHover.volume = 0.15;
+const sfxClick = new Audio(AUDIO_CFG.sfx.click); sfxClick.volume = 0.3;
+document.querySelectorAll('a, button, .proj, .app-card, .rchip, select, .feat, .nav-back, .cs-btn, .btn-primary, .btn-secondary').forEach(el => {
+  el.addEventListener('mouseenter', () => { sfxHover.currentTime = 0; sfxHover.play().catch(()=>{}); });
+  el.addEventListener('click', () => { sfxClick.currentTime = 0; sfxClick.play().catch(()=>{}); });
+});
+
+const bgmAudio = new Audio(); bgmAudio.loop = true; bgmAudio.volume = 0.25;
+let isPlaying = localStorage.getItem('mustno-bgm-play') === 'true';
+let trackIdx = parseInt(localStorage.getItem('mustno-track-idx')) || 0;
+
+function updateBgmUI() {
+  const w = document.getElementById('audio-widget'), pIcon = document.getElementById('icon-play'), pauseIcon = document.getElementById('icon-pause'), tName = document.getElementById('bgm-track-name');
+  if (isPlaying) { w.classList.add('is-playing'); pIcon.style.display = 'none'; pauseIcon.style.display = 'block'; } 
+  else { w.classList.remove('is-playing'); pIcon.style.display = 'block'; pauseIcon.style.display = 'none'; }
+  tName.textContent = `TRACK 0${trackIdx + 1}`;
+}
+
+function playCurrentTrack() {
+  let tName = document.body.className || 'default';
+  if (!AUDIO_CFG.bgm[tName]) tName = 'default';
+  bgmAudio.src = AUDIO_CFG.bgm[tName][trackIdx % 2];
+  bgmAudio.currentTime = parseFloat(localStorage.getItem('mustno-bgm-time')) || 0;
+  if (isPlaying) bgmAudio.play().catch(() => { const r = () => { bgmAudio.play(); updateBgmUI(); window.removeEventListener('click', r); }; window.addEventListener('click', r); });
+  updateBgmUI();
+}
+
+window.toggleBGM = function() {
+  if (bgmAudio.paused) { bgmAudio.play().then(() => { isPlaying = true; localStorage.setItem('mustno-bgm-play', 'true'); updateBgmUI(); }); } 
+  else { bgmAudio.pause(); isPlaying = false; localStorage.setItem('mustno-bgm-play', 'false'); updateBgmUI(); }
+};
+
+window.nextTrack = function() {
+  trackIdx = (trackIdx + 1) % 2; localStorage.setItem('mustno-track-idx', trackIdx); localStorage.setItem('mustno-bgm-time', '0');
+  playCurrentTrack(); if (!isPlaying) toggleBGM();
+};
+
+setInterval(() => { if (!bgmAudio.paused) localStorage.setItem('mustno-bgm-time', bgmAudio.currentTime); }, 1000);
+playCurrentTrack(); updateBgmUI();
+document.querySelectorAll('.tb-back,.cs-btn,.theme-select,.audio-btn').forEach(el=>{el.addEventListener('mouseenter',()=>{cur.style.transform='scale(2.5)';}); el.addEventListener('mouseleave',()=>{cur.style.transform='scale(1)';});});
+</script>
+</body>
+</html>

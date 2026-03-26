@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NextGenSim — Network Simulator</title>
+<link rel="icon" type="image/png" href="logo.png?v=1">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050b16; --accent:#4a7aff; --green:#5effa8; --orange:#ff8844; --text:#e4edff;
+  --dim:rgba(160,190,255,.45); --muted:rgba(80,110,185,.38); --border:rgba(60,100,240,.14);
+  --bordm:rgba(60,100,240,.28); --card:#080f1e; --font-main: 'Syne', sans-serif;
+  --hdr-bg: linear-gradient(to bottom,rgba(5,11,22,.85),transparent);
+}
+body.theme-wii {
+  --bg: #f4f4f4; --accent: #00baff; --green: #00a2e8; --orange: #ff8844; --text: #444444;
+  --dim: #777777; --muted: #999999; --border: #d0d0d0; --bordm: #aaaaaa; --card: #ffffff;
+  --font-main: 'Arial', sans-serif; --hdr-bg: linear-gradient(to bottom, rgba(244,244,244,0.9), transparent);
+}
+.theme-wii .bg-glow, .theme-wii .grid, .theme-wii .scan, .theme-wii .vig, .theme-wii #pts, .theme-wii #orb { display: none; }
+.theme-wii .feat { border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+
+body.theme-retro {
+  --bg: #000000; --accent: #00ff00; --green: #00ff00; --orange: #00ff00; --text: #00ff00;
+  --dim: #00aa00; --muted: #005500; --border: #00ff00; --bordm: #00ff00; --card: #000000;
+  --font-main: 'Space Mono', monospace; --hdr-bg: #000000;
+}
+.theme-retro .hero-title .outline { -webkit-text-stroke: 1.5px var(--accent); color: transparent; }
+
+body.theme-cyberpunk {
+  --bg: #090014; --accent: #ff007c; --green: #00f0ff; --orange: #facc15; --text: #ffffff;
+  --dim: #ff99cc; --muted: #b057ff; --border: rgba(255, 0, 124, 0.3); --bordm: rgba(0, 240, 255, 0.3);
+  --card: #160024; --font-main: 'Syne', sans-serif; --hdr-bg: linear-gradient(to bottom, rgba(9,0,20,0.85), transparent);
+}
+.theme-cyberpunk .hero-title .outline { -webkit-text-stroke: 1.5px var(--green); text-shadow: 0 0 15px rgba(0, 240, 255, 0.6); color: transparent; }
+.theme-cyberpunk .feat:hover { border-color: var(--accent); box-shadow: 0 0 40px rgba(255, 0, 124, 0.2); }
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-main);cursor:none;overflow-x:hidden; transition: background 0.5s ease, color 0.5s ease;}
+
+.theme-select { background: transparent; border: 1px solid var(--border); color: var(--dim); font-family: 'Space Mono', monospace; font-size: clamp(.48rem,.55vw,.58rem); padding: 4px 8px; outline: none; cursor: none; border-radius: 4px; }
+.theme-select option { background: var(--bg); color: var(--text); }
+#cur{position:fixed;width:7px;height:7px;background:var(--green);border-radius:50%;pointer-events:none;z-index:9999;mix-blend-mode:screen;transition:transform .15s cubic-bezier(.34,1.56,.64,1), background .2s;}
+body.theme-wii #cur { mix-blend-mode: normal; }
+
+.bg-glow{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 70% 60% at 20% 40%,rgba(74,122,255,.055) 0%,transparent 65%),radial-gradient(ellipse 50% 50% at 80% 70%,rgba(94,255,168,.025) 0%,transparent 60%);}
+.grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(60,100,240,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(60,100,240,.07) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse 90% 90% at 50% 50%,black 20%,transparent 100%);}
+.scan{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.018) 2px,rgba(0,0,0,.018) 4px);}
+.vig{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 110% 110% at 50% 50%,transparent 40%,rgba(5,11,22,.85) 100%);}
+#orb{position:fixed;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(74,122,255,.04) 0%,transparent 62%);pointer-events:none;z-index:1;transform:translate(-50%,-50%);transition:left 1s ease,top 1s ease;}
+#pts{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;}
+.pt{position:absolute;border-radius:50%;animation:riseUp linear infinite;opacity:0;}
+@keyframes riseUp{0%{transform:translateY(108vh) translateX(0);opacity:0;}5%{opacity:.4;}95%{opacity:.1;}100%{transform:translateY(-20px) translateX(var(--dx));opacity:0;}}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:20px clamp(20px,4vw,52px);border-bottom:1px solid var(--border);background:var(--hdr-bg);backdrop-filter:blur(16px);gap:12px;}
+.nav-left{display:flex;align-items:center;gap:14px;}
+.nav-back{display:flex;align-items:center;gap:7px;font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.1em;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:5px 12px;transition:color .2s,border-color .2s,background .2s;cursor:none;border-radius: 4px;}
+.nav-back:hover{color:var(--green);border-color:var(--green);background:rgba(94,255,168,.05);}
+.bkarr{display:inline-block;transition:transform .2s;}
+.nav-back:hover .bkarr{transform:translateX(-3px);}
+.breadcrumb{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.breadcrumb span{color:var(--dim);}
+.breadcrumb .sep{opacity:.4;}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.badge{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.12em;color:var(--green);}
+.bdot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green);animation:pls 2s ease-in-out infinite;}
+@keyframes pls{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+
+.hero{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:clamp(100px,14vh,140px) clamp(20px,5vw,60px) clamp(60px,8vh,80px);}
+.hero-eyebrow{font-family:'Space Mono',monospace;font-size:clamp(.58rem,.7vw,.68rem);letter-spacing:.3em;color:var(--accent);text-transform:uppercase;margin-bottom:20px;opacity:0;animation:fadeUp .6s .1s ease forwards;display:flex;align-items:center;gap:12px;}
+.hero-eyebrow::before,.hero-eyebrow::after{content:'';flex:1;max-width:60px;height:1px;background:linear-gradient(to right,transparent,var(--accent));}
+.hero-eyebrow::after{background:linear-gradient(to left,transparent,var(--accent));}
+.hero-title{font-size:clamp(3rem,8vw,7.5rem);font-weight:900;letter-spacing:-.04em;line-height:.92;margin-bottom:24px;opacity:0;animation:fadeUp .65s .22s ease forwards;}
+.hero-title .solid{color:var(--text);display:block;}
+.hero-title .outline{display:block;color:transparent;-webkit-text-stroke:1.5px rgba(74,122,255,.5);position:relative;}
+.hero-title .outline::after{content:attr(data-text);position:absolute;left:0;top:0;color:var(--accent);-webkit-text-stroke:0;width:0;overflow:hidden;white-space:nowrap;animation:reveal 1.8s .9s ease forwards;}
+@keyframes reveal{to{width:100%;}}
+.hero-sub{font-size:clamp(.82rem,1.1vw,1rem);color:var(--dim);max-width:520px;line-height:1.72;margin-bottom:44px;opacity:0;animation:fadeUp .6s .38s ease forwards;}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp .6s .52s ease forwards;}
+.btn-launch{display:flex;align-items:center;gap:10px;padding:14px 32px;background:var(--accent);color:#fff;font-family:'Space Mono',monospace;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:none;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));transition:box-shadow .3s,transform .2s,background .2s;}
+.btn-launch:hover{background:color-mix(in srgb, var(--accent) 80%, white);box-shadow:0 0 40px color-mix(in srgb, var(--accent) 50%, transparent);transform:translateY(-2px);}
+.btn-launch .launch-icon{font-size:1rem;animation:pulse-icon 2s ease-in-out infinite;}
+@keyframes pulse-icon{0%,100%{transform:scale(1)}50%{transform:scale(1.15);}}
+.hero-meta{display:flex;align-items:center;gap:16px;margin-top:20px;opacity:0;animation:fadeUp .6s .62s ease forwards;}
+.vmeta{font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
+.vtag{font-family:'Space Mono',monospace;font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border:1px solid var(--bordm);color:var(--accent);background:color-mix(in srgb, var(--accent) 10%, transparent);}
+.vtag.g{color:var(--green);border-color:color-mix(in srgb, var(--green) 30%, transparent);background:color-mix(in srgb, var(--green) 10%, transparent);}
+.vtag.o{color:var(--orange);border-color:color-mix(in srgb, var(--orange) 30%, transparent);background:color-mix(in srgb, var(--orange) 10%, transparent);}
+.scroll-hint{position:absolute;bottom:clamp(24px,4vh,40px);left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;opacity:0;animation:fadeUp .6s 1.2s ease forwards;}
+.scroll-line{width:1px;height:36px;background:linear-gradient(to bottom,var(--accent),transparent);animation:scrollPulse 2s ease-in-out infinite;}
+@keyframes scrollPulse{0%,100%{opacity:.3;transform:scaleY(1)}50%{opacity:1;transform:scaleY(1.1)}}
+
+.stats{position:relative;z-index:10;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.stat{padding:clamp(24px,4vh,40px) clamp(20px,3vw,40px);border-right:1px solid var(--border);position:relative;overflow:hidden;transition:background .3s;}
+.stat:last-child{border-right:none;}
+.stat:hover{background:color-mix(in srgb, var(--accent) 5%, transparent);}
+.stat-n{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;color:var(--text);display:block;font-variant-numeric:tabular-nums;margin-bottom:4px;}
+.stat-n em{color:var(--accent);font-style:normal;font-size:.65em;}
+.stat-l{font-family:'Space Mono',monospace;font-size:clamp(.54rem,.6vw,.65rem);letter-spacing:.15em;color:var(--muted);text-transform:uppercase;}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr);}.stat{border-bottom:1px solid var(--border);}}
+
+.features{position:relative;z-index:10;padding:clamp(60px,10vh,100px) clamp(20px,5vw,60px);max-width:1200px;margin:0 auto;}
+.sec-label{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.28em;color:var(--green);text-transform:uppercase;margin-bottom:10px;}
+.sec-title{font-size:clamp(1.6rem,3vw,2.4rem);font-weight:900;letter-spacing:-.03em;color:var(--text);margin-bottom:clamp(36px,6vh,60px);}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:2px;}
+.feat{background:var(--card);border:1px solid var(--border);padding:clamp(20px,3vh,30px);position:relative;overflow:hidden;transition:border-color .3s,background .3s,box-shadow .3s;cursor:none;}
+.feat::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,var(--accent),transparent);transform:scaleX(0);transition:transform .4s cubic-bezier(0.22,1,.36,1);}
+.feat:hover{border-color:color-mix(in srgb, var(--accent) 35%, transparent);background:color-mix(in srgb, var(--card) 90%, var(--accent));box-shadow:0 0 40px color-mix(in srgb, var(--accent) 15%, transparent);}
+.feat:hover::before{transform:scaleX(1);}
+.feat-icon{width:40px;height:40px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb, var(--accent) 10%, transparent);border:1px solid var(--border);font-size:1.2rem;transition:background .3s,border-color .3s,box-shadow .3s;}
+.feat:hover .feat-icon{background:color-mix(in srgb, var(--accent) 20%, transparent);border-color:color-mix(in srgb, var(--accent) 40%, transparent);box-shadow:0 0 14px color-mix(in srgb, var(--accent) 30%, transparent);}
+.feat-name{font-size:1rem;font-weight:700;letter-spacing:-.015em;color:var(--text);margin-bottom:8px;}
+.feat-desc{font-size:.78rem;color:var(--dim);line-height:1.65;}
+
+.launch-banner{position:relative;z-index:10;margin:0 clamp(20px,5vw,60px) clamp(60px,8vh,100px);border:1px solid color-mix(in srgb, var(--accent) 25%, transparent);background:linear-gradient(135deg,color-mix(in srgb, var(--accent) 10%, transparent) 0%,transparent 60%);padding:clamp(36px,6vh,56px) clamp(28px,5vw,56px);display:flex;align-items:center;justify-content:space-between;gap:32px;flex-wrap:wrap;overflow:hidden;}
+.launch-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,var(--accent) 30%,var(--accent) 70%,transparent);}
+.lb-label{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.28em;color:var(--green);text-transform:uppercase;margin-bottom:10px;}
+.lb-title{font-size:clamp(1.4rem,2.8vw,2.2rem);font-weight:900;letter-spacing:-.03em;color:var(--text);margin-bottom:8px;}
+.lb-sub{font-size:.82rem;color:var(--dim);max-width:460px;line-height:1.6;}
+.lb-hex{position:absolute;right:-20px;top:50%;transform:translateY(-50%);font-size:clamp(120px,18vw,200px);line-height:1;color:color-mix(in srgb, var(--accent) 5%, transparent);pointer-events:none;font-family:'Space Mono',monospace;}
+
+footer{position:relative;z-index:10;padding:clamp(20px,3vh,32px) clamp(20px,4vw,52px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(to top,color-mix(in srgb, var(--bg) 60%, transparent),transparent);}
+.ft-l{font-family:'Space Mono',monospace;font-size:.56rem;letter-spacing:.12em;color:var(--muted);}
+.ft-l b{color:var(--accent);font-weight:400;}
+.ft-back{font-family:'Space Mono',monospace;font-size:.56rem;letter-spacing:.1em;color:var(--muted);text-decoration:none;cursor:none;transition:color .2s;}
+.ft-back:hover{color:var(--green);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div class="bg-glow"></div>
+<div class="grid"></div>
+<div class="scan"></div>
+<div class="vig"></div>
+<div id="pts"></div>
+<div id="orb"></div>
+
+<nav>
+  <div class="nav-left">
+    <a href="index.html" class="nav-back"><span class="bkarr">←</span> Zurück</a>
+    <div class="breadcrumb">
+      <span>MustNo</span><span class="sep">/</span><span>NextGenSim</span>
+    </div>
+  </div>
+  <div class="nav-right">
+    <select class="theme-select" onchange="changeTheme(this.value)">
+      <option value="">Cyber (Default)</option>
+      <option value="theme-wii">Wii Style</option>
+      <option value="theme-retro">Retro</option>
+      <option value="theme-cyberpunk">Cyberpunk</option>
+    </select>
+    <div class="badge"><div class="bdot"></div>v13.0 · DHCP &amp; Polish</div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-eyebrow">Network Simulation Platform</div>
+  <h1 class="hero-title"><span class="solid">NextGen</span><span class="outline" data-text="Sim">Sim</span></h1>
+  <p class="hero-sub">Der professionelle Netzwerk-Simulator für Cisco-Hardware, komplexe Topologien, DHCP-Management und Echtzeit-PDU-Analyse — direkt im Browser.</p>
+  <div class="hero-cta">
+    <button class="btn-launch" onclick="window.location.href='nextgensim-app.html'"><span class="launch-icon">⬡</span> App starten</button>
+  </div>
+  <div class="hero-meta"><span class="vmeta">Version</span><span class="vtag">v13.0</span><span class="vtag g">Stable</span><span class="vtag o">DHCP</span></div>
+  <div class="scroll-hint"><span>Mehr</span><div class="scroll-line"></div></div>
+</section>
+
+<div class="stats">
+  <div class="stat"><span class="stat-n" id="s1">0<em>+</em></span><div class="stat-l">Router-Modelle</div></div>
+  <div class="stat"><span class="stat-n" id="s2">0<em>ms</em></span><div class="stat-l">Simulation-Delay</div></div>
+  <div class="stat"><span class="stat-n" id="s3">0<em>+</em></span><div class="stat-l">Protokolle</div></div>
+  <div class="stat"><span class="stat-n" id="s4">0<em>k</em></span><div class="stat-l">Aktive Sessions</div></div>
+</div>
+
+<section class="features">
+  <div class="sec-label">// Funktionen</div>
+  <h2 class="sec-title">Was NextGenSim kann</h2>
+  <div class="feat-grid">
+    <div class="feat"><div class="feat-icon">⬡</div><div class="feat-name">Netzwerk-Topologie</div><div class="feat-desc">Drag-and-Drop Canvas für komplexe Netzwerke mit ISR 4321, 2911, 1941 und 2901 Routern sowie Switches und Endpoints.</div></div>
+    <div class="feat"><div class="feat-icon">📡</div><div class="feat-name">Echtzeit PDU-Analyse</div><div class="feat-desc">Verfolge Pakete live durch dein Netzwerk. Vollständige PDU-Liste mit Quelle, Ziel, Typ, Status und Zeitstempel.</div></div>
+    <div class="feat"><div class="feat-icon">⚙️</div><div class="feat-name">DHCP Manager</div><div class="feat-desc">Konfiguriere DHCP-Pools, Leases und Adressbereiche direkt auf dem Router. Automatische IP-Vergabe in der Simulation.</div></div>
+    <div class="feat"><div class="feat-icon">🔀</div><div class="feat-name">Routing Protokolle</div><div class="feat-desc">Unterstützung für statisches Routing, RIP, OSPF und BGP. Routing-Tabellen werden in Echtzeit aktualisiert.</div></div>
+    <div class="feat"><div class="feat-icon">⌨️</div><div class="feat-name">CLI Interface</div><div class="feat-desc">Vollständiges Cisco IOS CLI pro Gerät. Konfiguriere Interfaces, VLANs, ACLs und mehr mit echten Befehlen.</div></div>
+    <div class="feat"><div class="feat-icon">🔁</div><div class="feat-name">Realtime &amp; Simulation</div><div class="feat-desc">Wechsle zwischen Echtzeit-Modus und gesteuerter Simulation — verlangsame Zeit um jeden Schritt zu analysieren.</div></div>
+  </div>
+</section>
+
+<div class="launch-banner">
+  <div class="lb-hex">⬡</div>
+  <div class="lb-left"><div class="lb-label">// Bereit loszulegen?</div><div class="lb-title">Starte die Simulation</div><div class="lb-sub">Öffne NextGenSim und beginne sofort mit dem Aufbau deines ersten Netzwerks — keine Installation, direkt im Browser.</div></div>
+  <button class="btn-launch" onclick="window.location.href='nextgensim-app.html'" style="flex-shrink:0;"><span class="launch-icon">⬡</span> App starten</button>
+</div>
+
+<footer>
+  <div class="ft-l">NEXTGENSIM &nbsp;·&nbsp; <b>v13.0 DHCP &amp; Polish</b> &nbsp;·&nbsp; MustNo Platform</div>
+  <a href="index.html" class="ft-back">← Zurück zum Launcher</a>
+</footer>
+
+<script>
+const cur=document.getElementById('cur'),orb=document.getElementById('orb');
+document.addEventListener('mousemove',e=>{cur.style.left=e.clientX-3.5+'px';cur.style.top=e.clientY-3.5+'px';orb.style.left=e.clientX+'px';orb.style.top=e.clientY+'px';});
+window.addEventListener('touchstart',()=>{cur.style.display='none';},{once:true});
+
+const ptc=document.getElementById('pts');
+for(let i=0;i<28;i++){
+  const p=document.createElement('div');p.className='pt';
+  const g=Math.random()>.5,s=.6+Math.random()*1.8;
+  p.style.cssText=`left:${Math.random()*100}%;width:${s}px;height:${s}px;background:${g?'var(--green)':'var(--accent)'};--dx:${(Math.random()-.5)*140}px;animation-duration:${13+Math.random()*20}s;animation-delay:${Math.random()*24}s;`;
+  ptc.appendChild(p);
+}
+
+function count(el,target,suf,dur=1600){
+  let start=null;
+  const run=t=>{
+    if(!start)start=t; const p=Math.min((t-start)/dur,1); const e=1-Math.pow(1-p,3);
+    el.innerHTML=Math.round(e*target)+'<em>'+suf+'</em>'; if(p<1)requestAnimationFrame(run);
+  }; requestAnimationFrame(run);
+}
+const obs=new IntersectionObserver(entries=>{ entries.forEach(e=>{ if(e.isIntersecting){ count(document.getElementById('s1'),18,'+'); count(document.getElementById('s2'),12,'ms',1200); count(document.getElementById('s3'),32,'+',1800); count(document.getElementById('s4'),8,'k',2000); obs.disconnect(); } });});
+obs.observe(document.querySelector('.stats'));
+
+const feats=document.querySelectorAll('.feat');
+const fobs=new IntersectionObserver(entries=>{ entries.forEach(e=>{ if(e.isIntersecting){ const i=Array.from(feats).indexOf(e.target); setTimeout(()=>{e.target.style.opacity='1';e.target.style.transform='translateY(0)';},i*80); fobs.unobserve(e.target); } });},{threshold:.1});
+feats.forEach(f=>{ f.style.opacity='0';f.style.transform='translateY(20px)'; f.style.transition='opacity .5s ease,transform .5s ease,border-color .3s,background .3s,box-shadow .3s'; fobs.observe(f); });
+</script>
+
+<!-- ── PREMIUM AUDIO & THEME SYSTEM ── -->
+<style>
+  #audio-widget {
+    position: fixed; bottom: clamp(20px, 4vh, 40px); left: clamp(20px, 4vw, 56px); z-index: 9990;
+    display: flex; gap: 14px; align-items: center;
+    background: var(--glass, rgba(255, 255, 255, 0.05)); border: 1px solid var(--border, rgba(255,255,255,0.1));
+    padding: 10px 18px 10px 14px; border-radius: calc(var(--proj-rad, 0px) / 2 + 12px); backdrop-filter: blur(12px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15); transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  }
+  #audio-widget:hover { border-color: var(--accent, #4a7aff); box-shadow: 0 8px 30px color-mix(in srgb, var(--accent, #4a7aff) 20%, transparent); transform: translateY(-2px); }
+  body.theme-wii #audio-widget { background: rgba(255, 255, 255, 0.85); border-color: #ccc; }
+  .audio-eq { display: flex; gap: 3px; align-items: flex-end; height: 16px; width: 18px; }
+  .eq-bar { width: 4px; background: var(--dim, #888); border-radius: 2px; height: 4px; transition: height 0.1s, background 0.3s; }
+  #audio-widget.is-playing .eq-bar { background: var(--green, #5effa8); animation: eq-bounce 0.8s infinite alternate ease-in-out; box-shadow: 0 0 6px var(--green, #5effa8); }
+  #audio-widget.is-playing .eq-bar:nth-child(2) { animation-delay: -0.4s; }
+  #audio-widget.is-playing .eq-bar:nth-child(3) { animation-delay: -0.2s; }
+  @keyframes eq-bounce { 0%, 20% { height: 4px; } 100% { height: 16px; } }
+  .audio-info { display: flex; flex-direction: column; justify-content: center; min-width: 70px; }
+  .audio-label { font-family: 'Space Mono', monospace; font-size: 0.45rem; color: var(--muted, #999); letter-spacing: 0.25em; text-transform: uppercase; margin-bottom: 3px; }
+  .audio-track { font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; color: var(--text, #fff); letter-spacing: 0.15em; text-transform: uppercase; transition: color 0.3s; }
+  #audio-widget.is-playing .audio-track { color: var(--accent, #4a7aff); }
+  .audio-controls { display: flex; gap: 6px; align-items: center; margin-left: 10px; padding-left: 14px; border-left: 1px solid var(--border, #444); }
+  .audio-btn { background: transparent; border: none; color: var(--dim, #888); display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; cursor: none; transition: all 0.2s; }
+  .audio-btn svg { width: 14px; height: 14px; fill: currentColor; }
+  .audio-btn:hover { color: var(--bg, #000); background: var(--text, #fff); transform: scale(1.1); }
+  #audio-widget.is-playing .audio-btn:hover { background: var(--green, #5effa8); }
+</style>
+
+<div id="audio-widget">
+  <div class="audio-eq"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>
+  <div class="audio-info"><div class="audio-label">SYS.BGM</div><div class="audio-track" id="bgm-track-name">TRACK 01</div></div>
+  <div class="audio-controls">
+    <button class="audio-btn" onclick="toggleBGM()"><svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg id="icon-pause" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
+    <button class="audio-btn" onclick="nextTrack()"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+  </div>
+</div>
+
+<script>
+const savedTheme = localStorage.getItem('mustno-theme');
+if (savedTheme) { document.body.className = savedTheme; if (document.querySelector('.theme-select')) document.querySelector('.theme-select').value = savedTheme; }
+
+function changeTheme(themeName) {
+  document.body.className = themeName; localStorage.setItem('mustno-theme', themeName);
+  trackIdx = 0; localStorage.setItem('mustno-track-idx', '0'); localStorage.setItem('mustno-bgm-time', '0'); playCurrentTrack();
+}
+
+const AUDIO_CFG = {
+  sfx: { hover: 'Downloads/sfx-hover.mp3', click: 'Downloads/sfx-click.mp3' },
+  bgm: {
+    'default':         ['Downloads/cyber-1.mp3', 'Downloads/cyber-2.mp3'],
+    'theme-wii':       ['Downloads/wii-1.mp3',   'Downloads/wii-2.mp3'],
+    'theme-retro':     ['Downloads/retro-1.mp3', 'Downloads/retro-2.mp3'],
+    'theme-cyberpunk': ['Downloads/cyberpunk-1.mp3', 'Downloads/cyberpunk-2.mp3']
+  }
+};
+
+const sfxHover = new Audio(AUDIO_CFG.sfx.hover); sfxHover.volume = 0.15;
+const sfxClick = new Audio(AUDIO_CFG.sfx.click); sfxClick.volume = 0.3;
+document.querySelectorAll('a, button, .proj, .app-card, .rchip, select, .feat, .nav-back, .cs-btn, .btn-primary, .btn-secondary').forEach(el => {
+  el.addEventListener('mouseenter', () => { sfxHover.currentTime = 0; sfxHover.play().catch(()=>{}); });
+  el.addEventListener('click', () => { sfxClick.currentTime = 0; sfxClick.play().catch(()=>{}); });
+});
+
+const bgmAudio = new Audio(); bgmAudio.loop = true; bgmAudio.volume = 1;
+let isPlaying = localStorage.getItem('mustno-bgm-play') === 'true';
+let trackIdx = parseInt(localStorage.getItem('mustno-track-idx')) || 0;
+
+function updateBgmUI() {
+  const w = document.getElementById('audio-widget'), pIcon = document.getElementById('icon-play'), pauseIcon = document.getElementById('icon-pause'), tName = document.getElementById('bgm-track-name');
+  if (isPlaying) { w.classList.add('is-playing'); pIcon.style.display = 'none'; pauseIcon.style.display = 'block'; } 
+  else { w.classList.remove('is-playing'); pIcon.style.display = 'block'; pauseIcon.style.display = 'none'; }
+  tName.textContent = `TRACK 0${trackIdx + 1}`;
+}
+
+function playCurrentTrack() {
+  let tName = document.body.className || 'default';
+  if (!AUDIO_CFG.bgm[tName]) tName = 'default';
+  bgmAudio.src = AUDIO_CFG.bgm[tName][trackIdx % 2];
+  bgmAudio.currentTime = parseFloat(localStorage.getItem('mustno-bgm-time')) || 0;
+  if (isPlaying) bgmAudio.play().catch(() => { const r = () => { bgmAudio.play(); updateBgmUI(); window.removeEventListener('click', r); }; window.addEventListener('click', r); });
+  updateBgmUI();
+}
+
+window.toggleBGM = function() {
+  if (bgmAudio.paused) { bgmAudio.play().then(() => { isPlaying = true; localStorage.setItem('mustno-bgm-play', 'true'); updateBgmUI(); }); } 
+  else { bgmAudio.pause(); isPlaying = false; localStorage.setItem('mustno-bgm-play', 'false'); updateBgmUI(); }
+};
+
+window.nextTrack = function() {
+  trackIdx = (trackIdx + 1) % 2; localStorage.setItem('mustno-track-idx', trackIdx); localStorage.setItem('mustno-bgm-time', '0');
+  playCurrentTrack(); if (!isPlaying) toggleBGM();
+};
+
+setInterval(() => { if (!bgmAudio.paused) localStorage.setItem('mustno-bgm-time', bgmAudio.currentTime); }, 1000);
+playCurrentTrack(); updateBgmUI();
+document.querySelectorAll('button,.feat,.nav-back,.ft-back,.theme-select,.audio-btn').forEach(el=>{el.addEventListener('mouseenter',()=>{document.getElementById('cur').style.transform='scale(2.5)';}); el.addEventListener('mouseleave',()=>{document.getElementById('cur').style.transform='scale(1)';});});
+</script>
+</body>
+</html>
