@@ -159,7 +159,20 @@
             mask-image: radial-gradient(circle, black 30%, transparent 35%);
             mask-size: 4px 4px;
         }
+/* ===== GLOBALE THEMES FÜR DEN SIMULATOR ===== */
+        body.theme-wii { color: #444; }
+        body.theme-wii .glass { background: rgba(255,255,255,0.9); border-color: #ccc; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        body.theme-wii .text-white, body.theme-wii .text-slate-100, body.theme-wii .text-slate-200, body.theme-wii .text-slate-300 { color: #222 !important; }
+        body.theme-wii .text-slate-400, body.theme-wii .text-slate-500 { color: #666 !important; }
+        body.theme-wii .bg-space-950, body.theme-wii .bg-space-900, body.theme-wii .bg-space-800 { background-color: #fff !important; border-color: #ddd !important; }
+        body.theme-wii #canvas-wrapper, body.theme-wii .bg-\\[\\#0b0c15\\] { background-color: #f4f4f4 !important; }
+        
+        body.theme-retro { font-family: 'JetBrains Mono', monospace; }
+        body.theme-retro * { border-color: #00ff00 !important; color: #00ff00 !important; }
+        body.theme-retro .glass, body.theme-retro .bg-space-950, body.theme-retro .bg-space-900, body.theme-retro .bg-space-800 { background-color: #000 !important; }
+        body.theme-retro #canvas-wrapper, body.theme-retro .bg-\\[\\#0b0c15\\] { background-color: #000 !important; }
 
+        body.theme-cyberpunk #canvas-wrapper, body.theme-cyberpunk .bg-\\[\\#0b0c15\\] { background-color: #090014 !important; }
         /* --- REALISTIC MODULE STYLES (High Contrast) --- */
         .rack-module {
             background: linear-gradient(180deg, #2d2f55 0%, #151628 100%);
@@ -670,12 +683,12 @@
                     <div class="bg-space-800/50 p-4 rounded-lg border border-space-700">
                         <h4 class="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2"><i data-lucide="palette" class="w-3 h-3"></i> Theme Engine v10.5</h4>
                         
-                        <div class="grid grid-cols-3 gap-2 mb-4">
-                            <button onclick="app.applyTheme('matrix')" class="p-2 bg-green-900/20 border border-green-500/50 rounded text-[10px] text-green-400 hover:bg-green-900/40">Matrix</button>
-                            <button onclick="app.applyTheme('cyberpunk')" class="p-2 bg-pink-900/20 border border-pink-500/50 rounded text-[10px] text-pink-400 hover:bg-pink-900/40">Cyberpunk</button>
-                            <button onclick="app.applyTheme('corporate')" class="p-2 bg-slate-200/10 border border-slate-400/50 rounded text-[10px] text-slate-200 hover:bg-slate-700">Corporate</button>
+<div class="grid grid-cols-2 gap-2 mb-4">
+                            <button onclick="app.setGlobalTheme('')" class="p-2 bg-slate-800 border border-slate-600 rounded text-[10px] text-white hover:bg-slate-700">Cyber (Default)</button>
+                            <button onclick="app.setGlobalTheme('theme-wii')" class="p-2 bg-white border border-gray-300 rounded text-[10px] text-black hover:bg-gray-100">Wii Style</button>
+                            <button onclick="app.setGlobalTheme('theme-retro')" class="p-2 bg-green-900/20 border border-green-500/50 rounded text-[10px] text-green-400 hover:bg-green-900/40">Retro</button>
+                            <button onclick="app.setGlobalTheme('theme-cyberpunk')" class="p-2 bg-pink-900/20 border border-pink-500/50 rounded text-[10px] text-pink-400 hover:bg-pink-900/40">Cyberpunk</button>
                         </div>
-
                         <div class="space-y-3">
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-slate-300">Hintergrund-Raster</span>
@@ -987,21 +1000,100 @@
     </div>
 
     <script>
-        const apiKey = "#";
+        const apiKey = "AIzaSyDgoAHzvsTLA5VVlsTjc3zTZZiego2GVeg";
         const GEMINI_CONFIG_MODEL = 'gemini-2.5-flash';
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_CONFIG_MODEL}:generateContent?key=${apiKey}`;
 
-        class SoundSystem {
-            constructor() { this.ctx = null; this.sfxEnabled = true; this.musicEnabled = false; this.masterGain = null; this.volume = 30; this.bgm = new Audio(); this.bgm.volume = this.volume / 100; this.currentTrackIndex = 0; this.tracks = [{ name: "Track 1", url: "Downloads/cyber-1.mp3" }, { name: "Track 2", url: "Downloads/cyber-2.mp3" }, { name: "Track 3", url: "Downloads/cyberpunk-2.mp3" }]; this.bgm.addEventListener('timeupdate', () => { const seek = document.getElementById('music-seek'); if(seek) { const pct = (this.bgm.currentTime / this.bgm.duration) * 100; seek.value = pct || 0; const mins = Math.floor(this.bgm.currentTime / 60); const secs = Math.floor(this.bgm.currentTime % 60); document.getElementById('music-timer').innerText = `${mins}:${secs.toString().padStart(2, '0')}`; } }); this.bgm.addEventListener('ended', () => { this.skipTrack(); }); }
-            init() { if (!this.ctx) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.masterGain = this.ctx.createGain(); this.masterGain.gain.value = this.volume / 100; this.masterGain.connect(this.ctx.destination); } if(this.ctx.state === 'suspended') { this.ctx.resume(); } }
-            setVolume(val) { this.volume = val; if(this.masterGain) this.masterGain.gain.value = val / 100; this.bgm.volume = val / 100; }
-            playSFX(type) { if (this.sfxEnabled === false || !this.ctx) return; this.init(); const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.connect(gain); gain.connect(this.masterGain); const now = this.ctx.currentTime; switch(type) { case 'click': osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05); gain.gain.setValueAtTime(0.5, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05); osc.start(now); osc.stop(now + 0.05); break; case 'connect': osc.type = 'sine'; osc.frequency.setValueAtTime(440, now); osc.frequency.linearRampToValueAtTime(880, now + 0.1); gain.gain.setValueAtTime(0.5, now); gain.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break; case 'delete': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.2); gain.gain.setValueAtTime(0.5, now); gain.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break; case 'success': [523.25, 659.25, 783.99].forEach((freq, i) => { const o = this.ctx.createOscillator(); const g = this.ctx.createGain(); o.type = 'sine'; o.frequency.value = freq; o.connect(g); g.connect(this.masterGain); g.gain.setValueAtTime(0, now + i*0.1); g.gain.linearRampToValueAtTime(0.3, now + i*0.1 + 0.05); g.gain.exponentialRampToValueAtTime(0.01, now + i*0.1 + 0.4); o.start(now + i*0.1); o.stop(now + i*0.1 + 0.4); }); break; case 'error': osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(100, now + 0.3); gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3); break; } }
-            seek(val) { if(this.bgm.duration) { this.bgm.currentTime = (val / 100) * this.bgm.duration; } }
-            skipTrack() { this.currentTrackIndex = (this.currentTrackIndex + 1) % this.tracks.length; this.playMusic(); }
-            toggleMusic() { this.musicEnabled = !this.musicEnabled; const btn = document.getElementById('btn-music-toggle'); const cover = document.getElementById('music-cover'); if (this.musicEnabled) { this.playMusic(); btn.innerHTML = '<i data-lucide="pause" class="w-3.5 h-3.5 fill-current"></i>'; cover.classList.add('animate-spin-slow'); } else { this.bgm.pause(); btn.innerHTML = '<i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>'; document.getElementById('music-status-text').innerText = "Paused"; cover.classList.remove('animate-spin-slow'); } lucide.createIcons(); }
-            playMusic() { const track = this.tracks[this.currentTrackIndex]; if(this.bgm.src !== track.url) this.bgm.src = track.url; this.bgm.play().catch(e => console.log("Audio Autoplay prevented", e)); document.getElementById('music-status-text').innerText = track.name; const cover = document.getElementById('music-cover'); cover.classList.add('animate-spin-slow'); }
-        }
+class SoundSystem {
+    constructor() { 
+        this.ctx = null; 
+        this.sfxEnabled = true; 
+        this.musicEnabled = localStorage.getItem('mustno-bgm-play') === 'true'; 
+        this.masterGain = null; 
+        this.volume = 30; 
+        this.bgm = new Audio(); 
+        this.bgm.volume = this.volume / 100; 
+        
+        // Ordnet die Tracks den globalen Themes zu
+        this.bgmMap = {
+            '':                [{ name: "Cyber 1", url: "/cyber-1.mp3" }, { name: "Cyber 2", url: "/cyber-2.mp3" }],
+            'theme-wii':       [{ name: "Wii 1", url: "/wii-1.mp3" }, { name: "Wii 2", url: "/wii-2.mp3" }],
+            'theme-retro':     [{ name: "Retro 1", url: "/retro-1.mp3" }, { name: "Retro 2", url: "/retro-2.mp3" }],
+            'theme-cyberpunk': [{ name: "Neon 1", url: "/cyberpunk-1.mp3" }, { name: "Neon 2", url: "/cyberpunk-2.mp3" }]
+        };
+        const activeTheme = localStorage.getItem('mustno-theme') || '';
+        this.tracks = this.bgmMap[activeTheme] || this.bgmMap[''];
+        this.currentTrackIndex = parseInt(localStorage.getItem('mustno-track-idx')) || 0; 
+        
+        this.bgm.addEventListener('timeupdate', () => { 
+            const seek = document.getElementById('music-seek'); 
+            if(seek) { 
+                const pct = (this.bgm.currentTime / this.bgm.duration) * 100; 
+                seek.value = pct || 0; 
+                const mins = Math.floor(this.bgm.currentTime / 60); 
+                const secs = Math.floor(this.bgm.currentTime % 60); 
+                document.getElementById('music-timer').innerText = `${mins}:${secs.toString().padStart(2, '0')}`; 
+            } 
+            if (!this.bgm.paused) localStorage.setItem('mustno-bgm-time', this.bgm.currentTime);
+        }); 
+        
+        this.bgm.addEventListener('ended', () => { this.skipTrack(); }); 
+        
+        const track = this.tracks[this.currentTrackIndex % this.tracks.length];
+        this.bgm.src = track.url;
+        this.bgm.currentTime = parseFloat(localStorage.getItem('mustno-bgm-time')) || 0;
+    }
 
+    init() { if (!this.ctx) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.masterGain = this.ctx.createGain(); this.masterGain.gain.value = this.volume / 100; this.masterGain.connect(this.ctx.destination); } if(this.ctx.state === 'suspended') { this.ctx.resume(); } }
+    
+    setVolume(val) { this.volume = val; if(this.masterGain) this.masterGain.gain.value = val / 100; this.bgm.volume = val / 100; }
+    
+    playSFX(type) { if (this.sfxEnabled === false || !this.ctx) return; this.init(); const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.connect(gain); gain.connect(this.masterGain); const now = this.ctx.currentTime; switch(type) { case 'click': osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05); gain.gain.setValueAtTime(0.5, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05); osc.start(now); osc.stop(now + 0.05); break; case 'connect': osc.type = 'sine'; osc.frequency.setValueAtTime(440, now); osc.frequency.linearRampToValueAtTime(880, now + 0.1); gain.gain.setValueAtTime(0.5, now); gain.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break; case 'delete': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.2); gain.gain.setValueAtTime(0.5, now); gain.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break; case 'success': [523.25, 659.25, 783.99].forEach((freq, i) => { const o = this.ctx.createOscillator(); const g = this.ctx.createGain(); o.type = 'sine'; o.frequency.value = freq; o.connect(g); g.connect(this.masterGain); g.gain.setValueAtTime(0, now + i*0.1); g.gain.linearRampToValueAtTime(0.3, now + i*0.1 + 0.05); g.gain.exponentialRampToValueAtTime(0.01, now + i*0.1 + 0.4); o.start(now + i*0.1); o.stop(now + i*0.1 + 0.4); }); break; case 'error': osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(100, now + 0.3); gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3); break; } }
+
+    seek(val) { 
+        if(this.bgm.duration) { 
+            this.bgm.currentTime = (val / 100) * this.bgm.duration; 
+            localStorage.setItem('mustno-bgm-time', this.bgm.currentTime); 
+        } 
+    }
+    
+    skipTrack() { 
+        this.currentTrackIndex = (this.currentTrackIndex + 1) % this.tracks.length; 
+        localStorage.setItem('mustno-track-idx', this.currentTrackIndex); 
+        localStorage.setItem('mustno-bgm-time', '0'); 
+        this.playMusic(); 
+    }
+    
+    toggleMusic() { 
+        this.musicEnabled = !this.musicEnabled; 
+        localStorage.setItem('mustno-bgm-play', this.musicEnabled); 
+        const btn = document.getElementById('btn-music-toggle'); 
+        const cover = document.getElementById('music-cover'); 
+        if (this.musicEnabled) { 
+            this.playMusic(); 
+            btn.innerHTML = '<i data-lucide="pause" class="w-3.5 h-3.5 fill-current"></i>'; 
+            cover.classList.add('animate-spin-slow'); 
+        } else { 
+            this.bgm.pause(); 
+            btn.innerHTML = '<i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>'; 
+            document.getElementById('music-status-text').innerText = "Paused"; 
+            cover.classList.remove('animate-spin-slow'); 
+        } 
+        lucide.createIcons(); 
+    }
+    
+    playMusic() { 
+        const track = this.tracks[this.currentTrackIndex % this.tracks.length]; 
+        if(!this.bgm.src.includes(track.url)) {
+            this.bgm.src = track.url;
+            this.bgm.currentTime = parseFloat(localStorage.getItem('mustno-bgm-time')) || 0;
+        }
+        this.bgm.play().catch(e => console.log("Audio Autoplay prevented", e)); 
+        document.getElementById('music-status-text').innerText = track.name; 
+        const cover = document.getElementById('music-cover'); 
+        cover.classList.add('animate-spin-slow'); 
+    }
+}
 async function fetchWithExponentialBackoff(url, options, maxRetries = 5) { 
     for (let i = 0; i < maxRetries; i++) { 
         try { 
@@ -1096,6 +1188,32 @@ async function fetchWithExponentialBackoff(url, options, maxRetries = 5) {
                 this.setCategory('routers');
                 this.renderShortcuts();
                 this.notify('NextGen Sim v13.2 Flow Update - Ready', 'success');
+
+
+// ===== NEU: Globale Themes mappen und übernehmen =====
+                const savedTheme = localStorage.getItem('mustno-theme') || '';
+                document.body.className = `flex flex-col h-screen select-none text-sm antialiased text-slate-100 ${savedTheme}`;
+                
+                if (savedTheme === 'theme-retro') this.applyTheme('matrix');
+                else if (savedTheme === 'theme-wii') this.applyTheme('corporate');
+                else if (savedTheme === 'theme-cyberpunk') this.applyTheme('cyberpunk');
+                else this.applyTheme('default');
+
+                // ===== NEU: Musik nahtlos weiterspielen, wenn sie aktiv war =====
+                if (this.audio.musicEnabled) {
+                    document.getElementById('btn-music-toggle').innerHTML = '<i data-lucide="pause" class="w-3.5 h-3.5 fill-current"></i>';
+                    document.getElementById('music-cover').classList.add('animate-spin-slow');
+                    document.getElementById('music-status-text').innerText = this.audio.tracks[this.audio.currentTrackIndex % this.audio.tracks.length].name;
+                    
+                    this.audio.bgm.play().catch(() => {
+                        const resumeAudio = () => { 
+                            this.audio.bgm.currentTime = parseFloat(localStorage.getItem('mustno-bgm-time')) || 0;
+                            this.audio.bgm.play(); 
+                        };
+                        window.addEventListener('click', resumeAudio, { once: true });
+                        window.addEventListener('keydown', resumeAudio, { once: true });
+                    });
+                }
             }
 
             isValidIPv4(ip) {
@@ -1244,23 +1362,58 @@ async function fetchWithExponentialBackoff(url, options, maxRetries = 5) {
                 this.draw();
             }
 
-            applyTheme(themeName) {
-                let grid, term, overlay;
-                if (themeName === 'matrix') {
-                    grid = '#00ff00'; term = '#001100'; overlay = 'rgba(0, 20, 0, 0.9)';
-                } else if (themeName === 'cyberpunk') {
-                    grid = '#ff00ff'; term = '#1a0b1a'; overlay = 'rgba(40, 0, 40, 0.85)';
-                } else { // Corporate
-                    grid = '#e2e8f0'; term = '#0f172a'; overlay = 'rgba(30, 41, 59, 0.9)';
+setGlobalTheme(themeName) {
+                document.body.className = `flex flex-col h-screen select-none text-sm antialiased text-slate-100 ${themeName}`;
+                localStorage.setItem('mustno-theme', themeName);
+                
+                // Mappe auf Simulator-interne Background-Farben
+                if (themeName === 'theme-retro') this.applyTheme('matrix');
+                else if (themeName === 'theme-wii') this.applyTheme('corporate');
+                else if (themeName === 'theme-cyberpunk') this.applyTheme('cyberpunk');
+                else this.applyTheme('default');
+                
+                // Audio aktualisieren
+                const bgmMap = this.audio.bgmMap;
+                this.audio.tracks = bgmMap[themeName] || bgmMap[''];
+                this.audio.currentTrackIndex = 0;
+                localStorage.setItem('mustno-track-idx', '0');
+                localStorage.setItem('mustno-bgm-time', '0');
+                
+                if (this.audio.musicEnabled) {
+                    this.audio.playMusic();
+                } else {
+                    this.audio.bgm.src = this.audio.tracks[0].url;
+                    document.getElementById('music-status-text').innerText = "Ready";
                 }
+            }
+
+            applyTheme(themeName) {
+                let grid, term, overlay, textColor, ipColor, badgeBg;
+                if (themeName === 'matrix') { grid = '#00ff00'; term = '#001100'; overlay = 'rgba(0, 20, 0, 0.9)'; textColor = '#00ff00'; ipColor = '#00aa00'; badgeBg = 'rgba(0, 20, 0, 0.9)'; } 
+                else if (themeName === 'cyberpunk') { grid = '#ff00ff'; term = '#1a0b1a'; overlay = 'rgba(40, 0, 40, 0.85)'; textColor = '#ffffff'; ipColor = '#00f0ff'; badgeBg = 'rgba(22, 0, 36, 0.9)'; } 
+                else if (themeName === 'corporate') { grid = '#e2e8f0'; term = '#ffffff'; overlay = 'rgba(244, 244, 244, 0.95)'; textColor = '#222222'; ipColor = '#0055cc'; badgeBg = 'rgba(255, 255, 255, 0.9)'; } 
+                else { grid = 'rgba(99, 102, 241, 0.1)'; term = '#0b0c15'; overlay = 'rgba(21, 22, 40, 0.85)'; textColor = '#f8fafc'; ipColor = '#818cf8'; badgeBg = 'rgba(11, 12, 21, 0.9)'; }
+                
+                this.canvasTextColor = textColor;
+                this.canvasIpColor = ipColor;
+                this.canvasBadgeBg = badgeBg;
+
                 this.updateThemeColor('--grid-color', grid);
                 this.updateThemeColor('--term-bg', term);
                 this.updateThemeColor('--overlay-bg', overlay);
-                document.getElementById('set-color-grid').value = grid;
-                document.getElementById('set-color-term').value = term;
-                document.getElementById('set-color-overlay').value = overlay;
+                
+                try {
+                    document.getElementById('set-color-grid').value = this.rgbaToHex(grid);
+                    document.getElementById('set-color-term').value = this.rgbaToHex(term);
+                    document.getElementById('set-color-overlay').value = this.rgbaToHex(overlay);
+                } catch(e) {}
+                
+                const mainBg = document.getElementById('canvas-wrapper');
+                if(themeName === 'corporate') mainBg.style.backgroundColor = '#f4f4f4';
+                else if(themeName === 'matrix') mainBg.style.backgroundColor = '#000000';
+                else if(themeName === 'cyberpunk') mainBg.style.backgroundColor = '#090014';
+                else mainBg.style.backgroundColor = '#0b0c15';
             }
-
             updateThemeColor(variable, value) {
                 document.documentElement.style.setProperty(variable, value);
             }
@@ -1818,7 +1971,7 @@ addConnection(d1, d2, port1, port2) {
                 const width = this.ctx.measureText(text).width + 8;
                 const height = 14;
                 
-                this.ctx.fillStyle = "rgba(11, 12, 21, 0.9)";
+                this.ctx.fillStyle = this.canvasBadgeBg || "rgba(11, 12, 21, 0.9)";
                 this.ctx.strokeStyle = "rgba(99, 102, 241, 0.4)";
                 this.ctx.lineWidth = 1;
 
@@ -1828,7 +1981,7 @@ addConnection(d1, d2, port1, port2) {
                 this.ctx.fill();
                 this.ctx.stroke();
 
-                this.ctx.fillStyle = "#cbd5e1";
+                this.ctx.fillStyle = this.canvasTextColor || "#cbd5e1";
                 this.ctx.textAlign = "center";
                 this.ctx.textBaseline = "middle";
                 this.ctx.fillText(text, lx, ly);
@@ -1960,7 +2113,7 @@ addConnection(d1, d2, port1, port2) {
                         const badgeW = tw + 12 + (types.length * 8);
                         const badgeH = 18;
                         
-                        this.ctx.fillStyle = "rgba(21, 22, 40, 0.95)";
+                        this.ctx.fillStyle = this.canvasBadgeBg || "rgba(21, 22, 40, 0.95)";
                         this.ctx.strokeStyle = "rgba(99, 102, 241, 0.6)";
                         this.ctx.lineWidth = 1;
                         this.ctx.beginPath();
@@ -1969,7 +2122,7 @@ addConnection(d1, d2, port1, port2) {
                         this.ctx.fill();
                         this.ctx.stroke();
                         
-                        this.ctx.fillStyle = "#cbd5e1";
+                        this.ctx.fillStyle = this.canvasTextColor || "#cbd5e1";
                         this.ctx.textAlign = "left";
                         this.ctx.textBaseline = "middle";
                         this.ctx.fillText(text, midX - badgeW/2 + 6, midY - 24);
@@ -2876,8 +3029,8 @@ powerAllDevices(powerOn) {
                         ctx.fillStyle = d.power ? '#4ade80' : '#f87171'; ctx.beginPath(); ctx.arc(18, -18, 4, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
                 }
                 
-                ctx.fillStyle = '#f8fafc'; ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center'; ctx.fillText(d.name, 0, 40);
-                const ip = d.interfaces['Eth0/0']?.ip || d.interfaces['Eth0']?.ip; if(ip) { ctx.fillStyle = '#818cf8'; ctx.font = '10px JetBrains Mono'; ctx.fillText(ip, 0, 52); }
+                ctx.fillStyle = this.canvasTextColor || '#f8fafc'; ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center'; ctx.fillText(d.name, 0, 40);
+                const ip = d.interfaces['Eth0/0']?.ip || d.interfaces['Eth0']?.ip; if(ip) { ctx.fillStyle = this.canvasIpColor || '#818cf8'; ctx.font = '10px JetBrains Mono'; ctx.fillText(ip, 0, 52); }
                 ctx.translate(-x, -y);
             }
 
@@ -3927,7 +4080,7 @@ loadProject(e) {
             app.renderPDUList();
             lucide.createIcons();
         };
-            // von NOEL und Musti - MustNoⒸ
+	// von NOEL und Musti - MustNoⒸ
     </script>
 </body>
 </html>
